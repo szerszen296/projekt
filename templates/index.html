@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8" />
+    <title>Kursy walut EUR (ostatnie dni)</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style/styles.css') }}" />
+</head>
+<body>
+    <h1>Kursy waluty EUR (ostatnie dni)</h1>
+
+    {% if error %}
+        <p style="color:red;">{{ error }}</p>
+    {% endif %}
+
+    <table id="currency-table">
+        <thead>
+            <tr><th>Data</th><th>Kurs (PLN)</th></tr>
+        </thead>
+        <tbody>
+            {{ tbody_html | safe }}
+        </tbody>
+    </table>
+
+    <h2>Wykres</h2>
+    <img src="{{ url_for('static', filename=chart_img) }}" alt="Wykres EUR" style="max-width: 600px;">
+
+    <p><a href="/download-excel">Pobierz dane w Excelu</a></p>
+</body>
+</html>
