@@ -6,9 +6,9 @@ Wyszukujemy w menu start Ubuntu-22.04
 w ubuntu:
 przy pierwszym uruchomieniu tworzymy uzytkownika.
 apt update
-apt install python3 python3-pip 
-tworzymy nowy katalog z projektem.
-mkdir projekt
+apt install python3 python3-pip git flask
+Pobieramy projekt.
+git clone https://github.com/szerszen296/projekt.git
 cd projekt
 python3 -m venv .venv
 . .venv/bin/activate
