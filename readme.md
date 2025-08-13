@@ -25,5 +25,8 @@ git clone https://github.com/szerszen296/projekt.git
   - Jest tabela z pięcioma wynikami
   - Jest obrazek o wielkości 800x400
   - Przyciski i samo pobieranie działa
-* By uruchomić test serwera bedąc w głównym katalogu serwera należy wpisać komendę:
+* By uruchomić test serwera bedąc w głównym katalogu serwera należy wpisać komendy:
+  - pip install pytest-playwright
+  - playwright install
+  - playwright install-deps
   - python3 test/test.py
