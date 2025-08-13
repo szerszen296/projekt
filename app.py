@@ -52,6 +52,14 @@ def index():
 
     return render_template('index.html', tbody_html=tbody_html, chart_img='charts/eur_chart.png')
 
+@app.route('/download/excel')
+def download_excel():
+    return send_from_directory('.', 'eur_data.xlsx', as_attachment=True)
+
+@app.route('/download/chart')
+def download_chart():
+    return send_from_directory('static/charts', 'eur_chart.png', as_attachment=True)
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=1111)

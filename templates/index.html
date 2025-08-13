@@ -12,6 +12,11 @@
         <p style="color:red;">{{ error }}</p>
     {% endif %}
 
+    <!-- Przycisk do pobrania Excela -->
+    <a href="{{ url_for('download_excel') }}">
+        <button>Pobierz dane (Excel)</button>
+    </a>
+
     <table id="currency-table">
         <thead>
             <tr><th>Data</th><th>Kurs (PLN)</th></tr>
@@ -23,6 +28,9 @@
 
     <h2>Wykres</h2>
     <img src="{{ url_for('static', filename=chart_img) }}" alt="Wykres EUR" style="max-width: 600px;">
-</body>
-</html>
 
+    <!-- Przycisk do pobrania wykresu -->
+    <a href="{{ url_for('download_chart') }}">
+        <button>Pobierz wykres (PNG)</button>
+    </a>
+</body>
