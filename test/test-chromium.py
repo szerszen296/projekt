@@ -1,5 +1,8 @@
-import os
+from pathlib import Path
 from playwright.sync_api import sync_playwright
+
+DOWNLOAD_DIR = "download"
+Path(DOWNLOAD_DIR).mkdir(parents=True, exist_ok=True)
 
 def test_currency_table_row_count(page):
     rows = page.locator("#currency-table tbody tr")
@@ -22,28 +25,31 @@ def test_excel_download(page):
     with page.expect_download() as download_info:
         page.click("a[href='/download/excel']")
     download = download_info.value
-    tmp_path = download.path()
-    assert tmp_path and os.path.exists(tmp_path), "Plik Excel nie został pobrany."
     filename = download.suggested_filename
-    assert filename.endswith(".xlsx"), f"Plik nie ma rozszerzenia .xlsx: {filename}"
-    print(f"Plik Excel został pobrany poprawnie jako: {filename}")
+    save_path = f"{DOWNLOAD_DIR}/{filename}"
+    download.save_as(save_path)
+    assert Path(save_path).exists(), "Plik Excel nie został pobrany."
+    assert save_path.endswith(".xlsx"), f"Plik nie ma rozszerzenia .xlsx: {save_path}"
+    print(f"Plik Excel został pobrany poprawnie jako: {save_path}")
 
 def test_chart_download(page):
     with page.expect_download() as download_info:
         page.click("a[href='/download/chart']")
     download = download_info.value
-    tmp_path = download.path()
-    assert tmp_path and os.path.exists(tmp_path), "Plik wykresu nie został pobrany."
     filename = download.suggested_filename
-    assert any(filename.endswith(ext) for ext in [".png"]), f"Nieprawidłowy typ pliku: {filename}"
-    print(f"Obraz wykresu został pobrany poprawnie jako: {filename}")
+    save_path = f"{DOWNLOAD_DIR}/{filename}"
+    download.save_as(save_path)
+    assert Path(save_path).exists(), "Plik wykresu nie został pobrany."
+    assert save_path.endswith(".png"), f"Nieprawidłowy typ pliku: {save_path}"
+    print(f"Obraz wykresu został pobrany poprawnie jako: {save_path}")
 
 def run_tests():
+    print("test chromium")
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)  # headless=True dla Linux
+        browser = p.chromium.launch(headless=True)
         context = browser.new_context(accept_downloads=True)
         page = context.new_page()
-        page.goto("http://localhost:1111", wait_until="networkidle")
+        page.goto("http://localhost:1111")
         test_currency_table_row_count(page)
         test_chart_image_dimensions(page)
         test_excel_download(page)
