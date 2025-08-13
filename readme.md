@@ -1,4 +1,4 @@
-# instalacja wsl:
+# Instalacja wsl:
 * W powershell:
   - wsl --install
   - wsl.exe --install Ubuntu-22.04
@@ -19,5 +19,11 @@ git clone https://github.com/szerszen296/projekt.git
 # Uruchomienie serwera:
 * python3 app.py
 # Sprawdzenie serwera:
-* w przeglądarce wpisz adres: http://localhost:1111
-
+* W przeglądarce wpisz adres: http://localhost:1111
+# Testowanie serwera:
+* Test serwera pozwala sprawdzić czy:
+  - Jest tabela z pięcioma wynikami
+  - Jest obrazek o wielkości 800x400
+  - Przyciski i samo pobieranie działa
+* By uruchomić test serwera bedąc w głównym katalogu serwera należy wpisać komendę:
+  - python3 test/test.py
