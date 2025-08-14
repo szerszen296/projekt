@@ -30,7 +30,7 @@ git clone https://github.com/szerszen296/projekt.git
   - playwright install
   - playwright install-deps
   - cd test
-  - python3 test-chromium.py
-  - python3 test-firefox.py
-  - pthon3 test-webkit.py
-  - By uruchomić trzy testy naraz można użyć: bash startall.sh
+  - pytest --browser=chromium test.py
+  - pytest --browser=firefox test.py
+  - pytest --browser=webkit test.py
+ 
