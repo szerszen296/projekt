@@ -15,7 +15,9 @@ git clone https://github.com/szerszen296/projekt.git
 * python3 -m venv .venv
 * . .venv/bin/activate
 # Instalacja potrzebnych programów do środowiska:
-* pip install requests pandas matplotlib openpyxl
+* pip install requests pandas matplotlib openpyxl pytest-playwright pytest pytest-html
+* playwright install
+* playwright install-deps
 # Uruchomienie serwera:
 * python3 app.py
 # Sprawdzenie serwera:
@@ -26,9 +28,6 @@ git clone https://github.com/szerszen296/projekt.git
   - Jest obrazek o wielkości 800x400
   - Przyciski pobierania działają poprawnie
 * By uruchomić test serwera bedąc w głównym katalogu serwera należy wpisać komendy:
-  - pip install pytest-playwright
-  - playwright install
-  - playwright install-deps
   - cd test
   - pytest --browser=chromium test.py
   - pytest --browser=firefox test.py
