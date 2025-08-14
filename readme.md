@@ -33,4 +33,5 @@ git clone https://github.com/szerszen296/projekt.git
   - pytest --browser=chromium test.py
   - pytest --browser=firefox test.py
   - pytest --browser=webkit test.py
+* Raport generuje się w formacie html w katalogu gdzie znajdują się testy.
  
