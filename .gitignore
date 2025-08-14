@@ -1,0 +1,8 @@
+static/charts
+test/downloads
+test/download
+test/report.html
+*.xlsx
+__pycache__/
+test/__pycache__/
+.venv/
