@@ -9,10 +9,10 @@ select {
     width: 300px;
 }
 
-
 table {
     border-collapse: collapse;
     width: 50%;
+    margin-top: 20px;
 }
 
 th, td {

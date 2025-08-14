@@ -2,18 +2,31 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8" />
-    <title>Kursy walut EUR (ostatnie dni)</title>
+    <title>Kursy walut (ostatnie dni)</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style/styles.css') }}" />
 </head>
 <body>
-    <h1>Kursy waluty EUR (ostatnie dni) </h1>
+    <h1>Kursy walut (ostatnie dni)</h1>
 
     {% if error %}
         <p style="color:red;">{{ error }}</p>
     {% endif %}
 
-    <!-- Przycisk do pobrania Excela -->
-    <a href="{{ url_for('download_excel') }}">
+    <form method="get" action="/">
+        <label for="currency">Wybierz walutę:</label>
+        <select name="currency" id="currency">
+            {% for key, name in currencies.items() %}
+                <option value="{{ key }}" {% if key == code %}selected{% endif %}>
+                    {{ key }} - {{ name }}
+                </option>
+            {% endfor %}
+        </select>
+        <button type="submit">Pokaż</button>
+    </form>
+
+    <br />
+
+    <a href="{{ url_for('download_excel') }}?currency={{ code }}">
         <button>Pobierz dane (Excel)</button>
     </a>
 
@@ -26,11 +39,14 @@
         </tbody>
     </table>
 
-    <h2>Wykres</h2>
-    <img src="{{ url_for('static', filename=chart_img) }}" alt="Wykres EUR" style="max-width: 600px;">
+    {% if chart_img %}
+        <h2>Wykres</h2>
+        <img src="{{ url_for('static', filename=chart_img) }}" alt="Wykres {{ code }}" style="max-width: 600px;">
 
-    <!-- Przycisk do pobrania wykresu -->
-    <a href="{{ url_for('download_chart') }}">
-        <button>Pobierz wykres (PNG)</button>
-    </a>
+        <br />
+        <a href="{{ url_for('download_chart') }}?currency={{ code }}">
+            <button>Pobierz wykres (PNG)</button>
+        </a>
+    {% endif %}
 </body>
+</html>

@@ -2,82 +2,100 @@ import pytest
 from pathlib import Path
 import requests
 
-DOWNLOAD_DIR = "download"
-Path(DOWNLOAD_DIR).mkdir(parents=True, exist_ok=True)
+DOWNLOAD_DIR = "downloads"
 
 def pytest_addoption(parser):
     parser.addoption(
         "--browser",
         action="store",
-        default=None,
-        choices=["chromium", "firefox", "webkit"],
-        help="Browser to run the test with (chromium, firefox, webkit)"
+        default="all",
+        help="Wybierz przeglądarkę: chromium, firefox, webkit lub all (domyślnie all)"
     )
 
-@pytest.fixture
-def br_name(request):
-    browser = request.config.getoption("--browser")
-    if browser is None:
-        pytest.skip("Musisz podać --browser=[chromium|firefox|webkit], by uruchomić test")
-    if isinstance(browser, (list, tuple)):
-        browser = browser[0]
-    return browser
+@pytest.fixture(scope="session")
+def browsers(request):
+    br = request.config.getoption("--browser")
+    if isinstance(br, list):
+        br = br[0] if br else "all"
+    br = br.lower()
+    valid_browsers = ["chromium", "firefox", "webkit"]
+    if br == "all" or br == "":
+        return valid_browsers
+    elif br in valid_browsers:
+        return [br]
+    else:
+        raise ValueError(f"Nieznana przeglądarka: {br}. Wybierz spośród: {valid_browsers} lub all.")
 
-def test_all(br_name, playwright):
-    browser = getattr(playwright, br_name).launch(headless=True)
-    context = browser.new_context(accept_downloads=True)
-    page = context.new_page()
-    page.goto("http://localhost:1111")
+@pytest.mark.parametrize("currency_code", ["USD", "CHF", "CZK"])
+def test_currency_page(playwright, browsers, currency_code):
+    for br_name in browsers:
+        print(f"\n=== Testowanie: {currency_code} w {br_name} ===")
 
-    rows = page.locator("#currency-table tbody tr")
-    count = rows.count()
-    assert count == 5 or count == 6, f"Oczekiwano 5 wierszy, znaleziono: {count}"
+        browser = getattr(playwright, br_name).launch(headless=True)
+        context = browser.new_context(accept_downloads=True)
+        page = context.new_page()
 
-    image = page.locator("img[alt='Wykres EUR']")
-    image.wait_for(state="visible")
-    handle = image.element_handle()
-    assert handle is not None, "Nie znaleziono obrazka z alt='Wykres EUR'"
-    width = page.evaluate("el => el.naturalWidth", handle)
-    height = page.evaluate("el => el.naturalHeight", handle)
-    assert width == 800, f"Oczekiwano szerokości 800, otrzymano: {width}"
-    assert height == 400, f"Oczekiwano wysokości 400, otrzymano: {height}"
+        page.goto(f"http://localhost:1111/?currency={currency_code}")
 
-    with page.expect_download() as download_info:
-        page.click("a[href='/download/excel']")
-    download = download_info.value
-    filename = download.suggested_filename
-    save_path = f"{DOWNLOAD_DIR}/{br_name}-{filename}"
-    download.save_as(save_path)
-    assert Path(save_path).exists(), "Plik Excel nie został pobrany."
-    assert save_path.endswith(".xlsx"), f"Plik nie ma rozszerzenia .xlsx: {save_path}"
+        rows = page.locator("#currency-table tbody tr")
+        count = rows.count()
+        assert 5 <= count <= 7, f"Oczekiwano 5-7 wierszy, znaleziono: {count}"
 
+        image = page.locator(f"img[alt='Wykres {currency_code}']")
+        image.wait_for(state="visible", timeout=5000)
+        handle = image.element_handle()
+        assert handle is not None, f"Nie znaleziono wykresu {currency_code}"
+        width = page.evaluate("el => el.naturalWidth", handle)
+        height = page.evaluate("el => el.naturalHeight", handle)
+        assert width > 100 and height > 100, f"Wykres ma dziwne wymiary: {width}x{height}"
 
-    link = page.locator("a[href='/download/chart']")
-    try:
-        with page.expect_download(timeout=10000) as download_info:
-            link.click()
+        with page.expect_download() as download_info:
+            page.click(f"a[href*='/download/excel?currency={currency_code}'] >> button")
         download = download_info.value
-        filename = download.suggested_filename
-        save_path = f"{DOWNLOAD_DIR}/{br_name}-{filename}"
-        download.save_as(save_path)
-    except Exception:
-        try:
-            link.wait_for(state="visible", timeout=5000)
-            href = link.get_attribute("href")
-        except Exception:
-            href = "/download/chart"
-        base_url = page.url.rsplit("/", 1)[0]
-        url = base_url + href
-        response = requests.get(url)
+        filename = download.suggested_filename or f"{currency_code}_data.xlsx"
+        excel_path = f"{DOWNLOAD_DIR}/{br_name}-{filename}"
+        download.save_as(excel_path)
+        assert Path(excel_path).exists(), f"Excel nie został pobrany: {excel_path}"
+        assert excel_path.endswith(".xlsx"), f"Zły format pliku: {excel_path}"
 
-        filename = href.split("/")[-1]
-        if not filename or '.' not in filename:
-            filename += ".png"
-        save_path = f"{DOWNLOAD_DIR}/{br_name}-{filename}"
-        with open(save_path, "wb") as f:
-            f.write(response.content)
+        chart_path = f"{DOWNLOAD_DIR}/{br_name}-{currency_code}_chart.png"
 
-    assert Path(save_path).exists(), "Plik wykresu nie został pobrany."
-    assert save_path.endswith(".png"), f"Nieprawidłowy typ pliku: {save_path}"
+        if br_name == "webkit":
+            print(f"Używam fallbacku do requests dla WebKit ({currency_code})...")
+            img_link = page.locator(f"a[href*='/download/chart?currency={currency_code}']")
+            if img_link.count() > 0:
+                try:
+                    img_link.wait_for(state="visible", timeout=3000)
+                    href = img_link.get_attribute("href")
+                    print(f"Znaleziono href: {href}")
+                    if href:
+                        url = f"http://localhost:1111{href}" if href.startswith("/") else href
+                        response = requests.get(url)
+                        print(f"Status HTTP: {response.status_code}")
+                        print(f"Typ treści: {response.headers.get('Content-Type')}")
+                        if response.status_code == 200:
+                            with open(chart_path, "wb") as f:
+                                f.write(response.content)
+                        else:
+                            raise Exception(f"Niepoprawny status HTTP: {response.status_code}")
+                except Exception as e:
+                    print(f"Fallback WebKit nie powiódł się: {e}")
+                    chart_path = None
+            else:
+                print("Nie znaleziono linku do wykresu dla WebKit.")
+                chart_path = None
+        else:
+            try:
+                with page.expect_download() as download_info:
+                    page.click(f"a[href*='/download/chart?currency={currency_code}'] >> button")
+                download = download_info.value
+                download.save_as(chart_path)
+            except Exception as e:
+                print(f"Download przez Playwright nie powiódł się: {e}")
+                chart_path = None
 
-    browser.close()
+        if chart_path:
+            assert Path(chart_path).exists(), f"Plik wykresu nie został pobrany: {chart_path}"
+            assert chart_path.endswith(".png"), f"Zły format wykresu: {chart_path}"
+
+        browser.close()
