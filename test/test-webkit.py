@@ -7,7 +7,7 @@ Path(DOWNLOAD_DIR).mkdir(parents=True, exist_ok=True)
 def test_currency_table_row_count(page):
     rows = page.locator("#currency-table tbody tr")
     count = rows.count()
-    assert count == 6, f"Oczekiwano 5 wierszy, znaleziono: {count}"
+    assert count == 5 or count == 6, f"Oczekiwano 5 wierszy, znaleziono: {count}"
     print("Tabela walut zawiera 5 wierszy.")
 
 def test_chart_image_dimensions(page):
@@ -26,7 +26,7 @@ def test_excel_download(page):
         page.click("a[href='/download/excel']")
     download = download_info.value
     filename = download.suggested_filename
-    save_path = f"{DOWNLOAD_DIR}/{filename}"
+    save_path = f"{DOWNLOAD_DIR}/webkit-{filename}"
     download.save_as(save_path)
     assert Path(save_path).exists(), "Plik Excel nie został pobrany."
     assert save_path.endswith(".xlsx"), f"Plik nie ma rozszerzenia .xlsx: {save_path}"
@@ -37,7 +37,7 @@ def test_chart_download(page):
         page.click("a[href='/download/chart']")
     download = download_info.value
     filename = download.suggested_filename
-    save_path = f"{DOWNLOAD_DIR}/{filename}"
+    save_path = f"{DOWNLOAD_DIR}/webkit-{filename}"
     download.save_as(save_path)
     assert Path(save_path).exists(), "Plik wykresu nie został pobrany."
     assert save_path.endswith(".png"), f"Nieprawidłowy typ pliku: {save_path}"

@@ -24,9 +24,13 @@ git clone https://github.com/szerszen296/projekt.git
 * Test serwera pozwala sprawdzić czy:
   - Jest tabela z pięcioma wynikami
   - Jest obrazek o wielkości 800x400
-  - Przyciski i samo pobieranie działa
+  - Przyciski pobierania działają poprawnie
 * By uruchomić test serwera bedąc w głównym katalogu serwera należy wpisać komendy:
   - pip install pytest-playwright
   - playwright install
   - playwright install-deps
-  - python3 test/test.py
+  - cd test
+  - python3 test-chromium.py
+  - python3 test-firefox.py
+  - pthon3 test-webkit.py
+  - By uruchomić trzy testy naraz można użyć: bash startall.sh
