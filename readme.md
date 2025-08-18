@@ -29,9 +29,9 @@ git clone https://github.com/szerszen296/projekt.git
   - Przyciski pobierania działają poprawnie
 * By uruchomić test serwera bedąc w głównym katalogu serwera należy wpisać komendy:
   - cd test
-  - pytest --browser=chromium test.py
-  - pytest --browser=firefox test.py
-  - pytest --browser=webkit test.py
-  - pytest test.py (ta opcja odpali testy dla wszystkich przeglądarek)
+  - BROWSER=chromium pytest test.py
+  - BROWSER=firefox pytest test.py
+  - BROWSER=webkit pytest test.py
+  - BROWSER=all pytest test.py (ta opcja odpali testy dla wszystkich przeglądarek)
 * Raport generuje się w formacie html w katalogu gdzie znajdują się testy.
  
