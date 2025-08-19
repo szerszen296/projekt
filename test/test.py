@@ -29,9 +29,8 @@ def pytest_generate_tests(metafunc):
     if "currency_code" in metafunc.fixturenames:
         metafunc.parametrize("currency_code", currencies)
     
-    # Zmieniamy to, by parametryzować tylko jeden przegląd na raz, na podstawie 'pytest.ini'
     if "br_name" in metafunc.fixturenames:
-        browser = os.getenv('BROWSER', 'chromium')  # Możesz ustawić przeglądarkę w systemie
+        browser = os.getenv('BROWSER', 'chromium') 
         metafunc.parametrize("br_name", [browser])
 
 def setup_browser(playwright, br_name):
