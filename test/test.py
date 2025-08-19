@@ -29,30 +29,30 @@ def pytest_generate_tests(metafunc):
     if "currency_code" in metafunc.fixturenames:
         metafunc.parametrize("currency_code", currencies)
     
-    if "br_name" in metafunc.fixturenames:
-        browser = os.getenv('BROWSER', 'chromium') 
-        metafunc.parametrize("br_name", [browser])
+    #if "browser_name" in metafunc.fixturenames:
+        #browser = os.getenv('BROWSER', 'chromium') 
+        #metafunc.parametrize("browser_name", [browser])
 
-def setup_browser(playwright, br_name):
-    if not isinstance(br_name, str):
-        raise ValueError(f"br_name powinno być ciągiem znaków, a nie {type(br_name)}")
+def setup_browser(playwright, browser_name):
+    if not isinstance(browser_name, str):
+        raise ValueError(f"browser_name powinno być ciągiem znaków, a nie {type(browser_name)}")
 
-    if br_name not in ["chromium", "firefox", "webkit"]:
-        raise ValueError(f"Nieobsługiwana przeglądarka: {br_name}")
+    if browser_name not in ["chromium", "firefox", "webkit"]:
+        raise ValueError(f"Nieobsługiwana przeglądarka: {browser_name}")
 
-    browser = getattr(playwright, br_name).launch(headless=True)
+    browser = getattr(playwright, browser_name).launch(headless=True)
     context = browser.new_context(accept_downloads=True)
     page = context.new_page()
     return browser, context, page
 
-def switch_page(page, currency_code, br_name=None, extra=None):
+def switch_page(page, currency_code, browser_name=None, extra=None):
     page.goto("http://localhost:1111/")
     page.select_option("#currency", value=currency_code)
     page.click("button[type='submit']")
     assert_currency_page_loaded(page, currency_code)
 
-def switch_currency(playwright, br_name, extra):
-    browser, context, page = setup_browser(playwright, br_name)
+def switch_currency(playwright, browser_name, extra):
+    browser, context, page = setup_browser(playwright, browser_name)
 
     page.goto("http://localhost:1111/")
     page.wait_for_selector("#currency-table", timeout=5000)
@@ -84,19 +84,19 @@ def switch_currency(playwright, br_name, extra):
 
     browser.close()
 
-def download_excel(page, br_name, currency_code):
+def download_excel(page, browser_name, currency_code):
     with page.expect_download() as download_info:
         page.click(f"a[href*='/download/excel?currency={currency_code}'] >> button")
     download = download_info.value
     filename = download.suggested_filename or f"{currency_code}_data.xlsx"
-    excel_path = f"{DOWNLOAD_DIR}/{br_name}-{filename}"
+    excel_path = f"{DOWNLOAD_DIR}/{browser_name}-{filename}"
     download.save_as(excel_path)
     assert Path(excel_path).exists(), f"Excel nie został pobrany: {excel_path}"
     assert excel_path.endswith(".xlsx"), f"Zły format pliku: {excel_path}"
 
-def download_chart(page, br_name, currency_code):
-    chart_path = f"{DOWNLOAD_DIR}/{br_name}-{currency_code}_chart.png"
-    if br_name == "webkit":
+def download_chart(page, browser_name, currency_code):
+    chart_path = f"{DOWNLOAD_DIR}/{browser_name}-{currency_code}_chart.png"
+    if browser_name == "webkit":
         img_link = page.locator(f"a[href*='/download/chart?currency={currency_code}']")
         if img_link.count() > 0:
             try:
@@ -130,41 +130,41 @@ def download_chart(page, br_name, currency_code):
         assert Path(chart_path).exists(), f"Plik wykresu nie został pobrany: {chart_path}"
         assert chart_path.endswith(".png"), f"Zły format wykresu: {chart_path}"
 
-def test_open_currency_page(playwright, br_name, currency_code, extra):
-    browser, context, page = setup_browser(playwright, br_name)
+def test_open_currency_page(playwright, browser_name, currency_code, extra):
+    browser, context, page = setup_browser(playwright, browser_name)
     url = f"http://localhost:1111/?currency={currency_code}"
     page.goto(url)
     assert_currency_page_loaded(page, currency_code)
     browser.close()
 
-def test_switch_page(playwright, br_name, currency_code, extra):
-    browser, context, page = setup_browser(playwright, br_name)
-    switch_page(page, currency_code, br_name=br_name, extra=extra)
+def test_switch_page(playwright, browser_name, currency_code, extra):
+    browser, context, page = setup_browser(playwright, browser_name)
+    switch_page(page, currency_code, browser_name=browser_name, extra=extra)
     browser.close()
 
-def test_switch_currency(playwright, br_name, extra):
-    browser, context, page = setup_browser(playwright, br_name)
-    switch_currency(playwright, br_name, extra)
+def test_switch_currency(playwright, browser_name, extra):
+    browser, context, page = setup_browser(playwright, browser_name)
+    switch_currency(playwright, browser_name, extra)
     browser.close()
 
-def test_download_excel(playwright, br_name, currency_code, extra):
-    browser, context, page = setup_browser(playwright, br_name)
-    switch_page(page, currency_code, br_name=br_name, extra=extra)
-    download_excel(page, br_name, currency_code)
+def test_download_excel(playwright, browser_name, currency_code, extra):
+    browser, context, page = setup_browser(playwright, browser_name)
+    switch_page(page, currency_code, browser_name=browser_name, extra=extra)
+    download_excel(page, browser_name, currency_code)
     browser.close()
 
-    filename = f"{br_name}-{currency_code}_data.xlsx"
+    filename = f"{browser_name}-{currency_code}_data.xlsx"
     filepath = os.path.join(DOWNLOAD_DIR, filename)
     if Path(filepath).exists():
         extra.append(extras.url(filepath, name=f"{currency_code} Excel"))
 
-def test_download_chart(playwright, br_name, currency_code, extra):
-    browser, context, page = setup_browser(playwright, br_name)
-    switch_page(page, currency_code, br_name=br_name, extra=extra)
-    download_chart(page, br_name, currency_code)
+def test_download_chart(playwright, browser_name, currency_code, extra):
+    browser, context, page = setup_browser(playwright, browser_name)
+    switch_page(page, currency_code, browser_name=browser_name, extra=extra)
+    download_chart(page, browser_name, currency_code)
     browser.close()
 
-    filename = f"{br_name}-{currency_code}_chart.png"
+    filename = f"{browser_name}-{currency_code}_chart.png"
     filepath = os.path.join(DOWNLOAD_DIR, filename)
     if Path(filepath).exists():
         extra.append(extras.url(filepath, name=f"{currency_code} Wykres"))
