@@ -26,14 +26,14 @@ def index():
     if code not in CURRENCIES:
         code = 'EUR'
 
-    table = 'A'
+    weeks = int(request.args.get('time', 1))
     end_date = datetime.today().date()
-    start_date = end_date - timedelta(days=7)
+    start_date = end_date - timedelta(weeks=weeks)
 
     start_str = start_date.strftime('%Y-%m-%d')
     end_str = end_date.strftime('%Y-%m-%d')
 
-    url = f'https://api.nbp.pl/api/exchangerates/rates/{table}/{code}/{start_str}/{end_str}/?format=json'
+    url = f'https://api.nbp.pl/api/exchangerates/rates/A/{code}/{start_str}/{end_str}/?format=json'
     response = requests.get(url)
 
     if response.status_code != 200:
@@ -56,13 +56,19 @@ def index():
     img_path = os.path.join('static', 'charts', f'{code}_chart.png')
     os.makedirs(os.path.dirname(img_path), exist_ok=True)
 
-    plt.figure(figsize=(8, 4))
-    plt.plot(df['date'], df['mid'], marker='o')
-    plt.title(f'Kurs {code} - ostatnie 7 dni')
+    plt.figure(figsize=(12, 6))
+    plt.plot(df['date'], df['mid'], marker='o', linestyle='-', color='b')
+
+    plt.title(f'Kurs {code} - ostatnie {weeks} tygodni')
     plt.xlabel('Data')
     plt.ylabel('Kurs (PLN)')
-    plt.grid(True)
+
+    plt.xticks(rotation=45, ha='right')
+
+    plt.grid(True, linestyle='--', alpha=0.7)
+
     plt.tight_layout()
+
     plt.savefig(img_path)
     plt.close()
 
@@ -77,6 +83,7 @@ def index():
                            code=code,
                            currencies=CURRENCIES,
                            error=None)
+
 
 @app.route('/download/excel')
 def download_excel():
