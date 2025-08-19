@@ -15,7 +15,7 @@ git clone https://github.com/szerszen296/projekt.git
 * python3 -m venv .venv
 * . .venv/bin/activate
 # Instalacja potrzebnych programów do środowiska:
-* pip install requests pandas matplotlib openpyxl pytest-playwright pytest pytest-html
+* pip install requests pandas matplotlib openpyxl pytest-playwright pytest pytest-html pytest-xdist
 * playwright install
 * playwright install-deps
 # Uruchomienie serwera:
@@ -30,5 +30,9 @@ git clone https://github.com/szerszen296/projekt.git
 * By uruchomić test serwera bedąc w głównym katalogu serwera należy wpisać komendy:
   - cd test
   - pytest test.py
+* By uruchomić testy na wszystkich rdzeniach należy użyć komendy:
+  - pytest -n auto test.py
 * Raport generuje się w formacie html w katalogu gdzie znajdują się testy.
  
+
+
