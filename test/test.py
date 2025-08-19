@@ -22,27 +22,25 @@ def assert_currency_page_loaded(page, currency_code):
     height = page.evaluate("el => el.naturalHeight", handle)
     assert width > 100 and height > 100, f"Wykres ma dziwne wymiary: {width}x{height}"
 
-
-@pytest.fixture(scope="session", autouse=True)
-def clean_download_dir():
-    download_path = Path(DOWNLOAD_DIR)
-    if download_path.exists():
-        for file in download_path.glob("*_screenshot*.png"):
-            file.unlink()
-    else:
-        download_path.mkdir(parents=True, exist_ok=True)
-
 def pytest_generate_tests(metafunc):
     browsers = ["chromium", "firefox", "webkit"]
     currencies = ["USD", "CHF", "CZK"]
 
-    if "br_name" in metafunc.fixturenames and "currency_code" in metafunc.fixturenames:
-        metafunc.parametrize("br_name", browsers)
+    if "currency_code" in metafunc.fixturenames:
         metafunc.parametrize("currency_code", currencies)
-    elif "br_name" in metafunc.fixturenames:
-        metafunc.parametrize("br_name", browsers)
+    
+    # Zmieniamy to, by parametryzować tylko jeden przegląd na raz, na podstawie 'pytest.ini'
+    if "br_name" in metafunc.fixturenames:
+        browser = os.getenv('BROWSER', 'chromium')  # Możesz ustawić przeglądarkę w systemie
+        metafunc.parametrize("br_name", [browser])
 
 def setup_browser(playwright, br_name):
+    if not isinstance(br_name, str):
+        raise ValueError(f"br_name powinno być ciągiem znaków, a nie {type(br_name)}")
+
+    if br_name not in ["chromium", "firefox", "webkit"]:
+        raise ValueError(f"Nieobsługiwana przeglądarka: {br_name}")
+
     browser = getattr(playwright, br_name).launch(headless=True)
     context = browser.new_context(accept_downloads=True)
     page = context.new_page()
