@@ -27,12 +27,15 @@ git clone https://github.com/szerszen296/projekt.git
   - Jest tabela z pięcioma wynikami
   - Jest obrazek o wielkości 800x400
   - Przyciski pobierania działają poprawnie
+  - Lista zmiany czasu działa poprawnie
+  - Lista zmiany waluty działa poprawnie
 * By uruchomić test serwera bedąc w głównym katalogu serwera należy wpisać komendy:
   - cd test
   - pytest test.py
 * By uruchomić testy na wszystkich rdzeniach należy użyć komendy:
   - pytest -n auto test.py
+* Zalecane jest używanie 2 rdzenieniów do testów:
+  - pytest -n 2 test.py
 * Raport generuje się w formacie html w katalogu gdzie znajdują się testy.
- 
 
 
