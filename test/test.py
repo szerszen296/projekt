@@ -8,6 +8,35 @@ from pytest_html import extras
 
 DOWNLOAD_DIR = "downloads"
 
+def compare_screenshots(page, before_path, after_path, change_desc, selector, extra=None):
+    page.screenshot(path=str(before_path), full_page=True)
+
+    page.click("button[type='submit']")
+
+    page.wait_for_selector(selector, timeout=5000)
+
+    page.screenshot(path=str(after_path), full_page=True)
+
+    with open(before_path, "rb") as f1, open(after_path, "rb") as f2:
+        hash1 = hashlib.sha256(f1.read()).hexdigest()
+        hash2 = hashlib.sha256(f2.read()).hexdigest()
+
+    match = hash1 == hash2
+    status = "IDENTYCZNE" if match else "RÓŻNE"
+    color = "green" if match else "red"
+
+    html = f"""
+    <div style="color:{color}; font-weight:bold;">
+        Porównanie screenów ({change_desc}): {status}
+    </div>
+    <div><strong>SHA256 Screenshot BEFORE:</strong> {hash1}</div>
+    <div><strong>SHA256 Screenshot AFTER:</strong> {hash2}</div>
+    """
+
+    if extra:
+        extra.append(extras.html(html))
+
+
 def assert_currency_page_loaded(page, currency_code):
     rows = page.locator("#currency-table tbody tr")
     count = rows.count()
@@ -25,13 +54,13 @@ def assert_currency_page_loaded(page, currency_code):
 def pytest_generate_tests(metafunc):
     browsers = ["chromium", "firefox", "webkit"]
     currencies = ["USD", "CHF", "CZK"]
+    weeks = ["1", "4", "8"]
 
     if "currency_code" in metafunc.fixturenames:
         metafunc.parametrize("currency_code", currencies)
-    
-    #if "browser_name" in metafunc.fixturenames:
-        #browser = os.getenv('BROWSER', 'chromium') 
-        #metafunc.parametrize("browser_name", [browser])
+
+    if "week_value" in metafunc.fixturenames:
+        metafunc.parametrize("week_value", weeks)
 
 def setup_browser(playwright, browser_name):
     if not isinstance(browser_name, str):
@@ -57,30 +86,19 @@ def switch_currency(playwright, browser_name, extra):
     page.goto("http://localhost:1111/")
     page.wait_for_selector("#currency-table", timeout=5000)
 
-    screenshot1 = Path(DOWNLOAD_DIR) / "screenshot1.png"
-    page.screenshot(path=str(screenshot1), full_page=True)
-
     page.select_option("#currency", value="USD")
-    page.click("button[type='submit']")
-    page.wait_for_selector("img[alt='Wykres USD']", timeout=5000)
 
-    screenshot2 = Path(DOWNLOAD_DIR) / "screenshot2.png"
-    page.screenshot(path=str(screenshot2), full_page=True)
+    before = Path(DOWNLOAD_DIR) / f"{browser_name}-currency-before.png"
+    after = Path(DOWNLOAD_DIR) / f"{browser_name}-currency-after.png"
 
-    with open(screenshot1, "rb") as f1, open(screenshot2, "rb") as f2:
-        hash1 = hashlib.sha256(f1.read()).hexdigest()
-        hash2 = hashlib.sha256(f2.read()).hexdigest()
-
-    match = hash1 == hash2
-    status = "IDENTYCZNE" if match else "RÓŻNE"
-    color = "green" if match else "red"
-
-    html = f"""
-    <div style="color:{color}; font-weight:bold;">Porównanie screenów: {status}</div>
-    <div><strong>SHA256 Screenshot 1:</strong> {hash1}</div>
-    <div><strong>SHA256 Screenshot 2:</strong> {hash2}</div>
-    """
-    extra.append(extras.html(html))
+    compare_screenshots(
+        page,
+        before_path=before,
+        after_path=after,
+        change_desc="zmiana waluty na USD",
+        selector="img[alt='Wykres USD']",
+        extra=extra
+    )
 
     browser.close()
 
@@ -130,6 +148,131 @@ def download_chart(page, browser_name, currency_code):
         assert Path(chart_path).exists(), f"Plik wykresu nie został pobrany: {chart_path}"
         assert chart_path.endswith(".png"), f"Zły format wykresu: {chart_path}"
 
+def switch_time(page, week_value, currency_code, browser_name=None, extra=None):
+    page.goto("http://localhost:1111/")
+    page.wait_for_selector("#currency-table", timeout=5000)
+
+    page.select_option("#currency", value=currency_code)
+    before = Path(DOWNLOAD_DIR) / f"{browser_name}-before-time-{currency_code}-{week_value}.png"
+    after = Path(DOWNLOAD_DIR) / f"{browser_name}-after-time-{currency_code}-{week_value}.png"
+    page.screenshot(path=str(before), full_page=True)
+    page.select_option("#time", value=week_value)
+    page.click("button[type='submit']")
+    page.wait_for_selector(f"img[alt='Wykres {currency_code}']", timeout=5000)
+
+    page.screenshot(path=str(after), full_page=True)
+
+    with open(before, "rb") as f1, open(after, "rb") as f2:
+        hash1 = hashlib.sha256(f1.read()).hexdigest()
+        hash2 = hashlib.sha256(f2.read()).hexdigest()
+
+    match = hash1 == hash2
+    status = "IDENTYCZNE" if match else "RÓŻNE"
+    color = "green" if match else "red"
+
+    html = f"""
+    <div style="color:{color}; font-weight:bold;">
+        Porównanie screenów po zmianie czasu ({week_value} tygodni) dla waluty {currency_code}: {status}
+    </div>
+    <div><strong>SHA256 Screenshot BEFORE:</strong> {hash1}</div>
+    <div><strong>SHA256 Screenshot AFTER:</strong> {hash2}</div>
+    """
+
+    if extra is not None:
+        extra.append(extras.html(html))
+
+
+def switch_currency_and_time(playwright, browser_name, currency_code, week_value, extra):
+    browser, context, page = setup_browser(playwright, browser_name)
+
+    page.goto("http://localhost:1111/")
+    page.wait_for_selector("#currency-table", timeout=5000)
+    page.select_option("#currency", value=currency_code)
+    page.select_option("#time", value=week_value)
+    before = Path(DOWNLOAD_DIR) / f"{browser_name}-before-{currency_code}-{week_value}.png"
+    after = Path(DOWNLOAD_DIR) / f"{browser_name}-after-{currency_code}-{week_value}.png"
+    page.screenshot(path=str(before), full_page=True)
+    page.click("button[type='submit']")
+    page.wait_for_selector(f"img[alt='Wykres {currency_code}']", timeout=5000)
+    page.screenshot(path=str(after), full_page=True)
+    with open(before, "rb") as f1, open(after, "rb") as f2:
+        hash1 = hashlib.sha256(f1.read()).hexdigest()
+        hash2 = hashlib.sha256(f2.read()).hexdigest()
+
+    match = hash1 == hash2
+    status = "IDENTYCZNE" if match else "RÓŻNE"
+    color = "green" if match else "red"
+
+    html = f"""
+    <div style="color:{color}; font-weight:bold;">
+        Porównanie screenów po zmianie waluty ({currency_code}) i czasu ({week_value} tygodni): {status}
+    </div>
+    <div><strong>SHA256 Screenshot BEFORE:</strong> {hash1}</div>
+    <div><strong>SHA256 Screenshot AFTER:</strong> {hash2}</div>
+    """
+
+    extra.append(extras.html(html))
+
+    browser.close()
+
+def download_excel_for_currency_and_week(page, currency, week_value, browser_name, extra):
+    page.goto("http://localhost:1111/")
+    page.wait_for_selector("#currency-table", timeout=5000)
+    page.select_option("#currency", value=currency)
+    page.select_option("#time", value=week_value)
+    page.click("button[type='submit']")
+    page.wait_for_selector(f"img[alt='Wykres {currency}']", timeout=5000)
+    with page.expect_download() as download_info:
+        page.click(f"a[href*='/download/excel?currency={currency}'] >> button")
+    download = download_info.value
+    filename = download.suggested_filename or f"{currency}_data.xlsx"
+    filepath = os.path.join(DOWNLOAD_DIR, f"{browser_name}-{filename}")
+    download.save_as(filepath)
+    assert Path(filepath).exists(), f"Nie znaleziono pliku: {filepath}"
+    assert filepath.endswith(".xlsx"), f"Zły format pliku: {filepath}"
+    extra.append(extras.url(filepath, name=f"{currency} Excel (8 tygodni)"))
+
+def download_chart_for_currency_and_week(page, currency, week_value, browser_name, extra):
+    page.goto("http://localhost:1111/")
+    page.wait_for_selector("#currency-table", timeout=5000)
+
+    page.select_option("#currency", value=currency)
+    page.select_option("#time", value=week_value)
+
+    page.click("button[type='submit']")
+    page.wait_for_selector(f"img[alt='Wykres {currency}']", timeout=10000)
+
+    download_link = page.locator(f"a[href*='/download/chart?currency={currency}']")
+    download_link.wait_for(state="visible", timeout=5000)
+
+    href = download_link.get_attribute("href")
+    assert href and currency in href, f"Link download chart href incorrect or missing currency: {href}"
+
+    chart_path = os.path.join(DOWNLOAD_DIR, f"{browser_name}-{currency}_chart.png")
+
+    if browser_name == "webkit":
+        try:
+            url = f"http://localhost:1111{href}" if href.startswith("/") else href
+            response = requests.get(url)
+            assert response.status_code == 200, f"HTTP status {response.status_code} when downloading chart"
+            with open(chart_path, "wb") as f:
+                f.write(response.content)
+        except Exception as e:
+            raise Exception(f"WebKit fallback failed: {e}")
+    else:
+        with page.expect_download() as download_info:
+            page.click(f"a[href*='/download/chart?currency={currency}'] >> button")
+        download = download_info.value
+        download.save_as(chart_path)
+
+    assert Path(chart_path).exists(), f"Nie znaleziono pliku wykresu: {chart_path}"
+    assert chart_path.endswith(".png"), f"Zły format pliku: {chart_path}"
+
+    extra.append(extras.url(chart_path, name=f"{currency} Wykres ({week_value} tygodni)"))
+
+
+
+
 def test_open_currency_page(playwright, browser_name, currency_code, extra):
     browser, context, page = setup_browser(playwright, browser_name)
     url = f"http://localhost:1111/?currency={currency_code}"
@@ -168,3 +311,24 @@ def test_download_chart(playwright, browser_name, currency_code, extra):
     filepath = os.path.join(DOWNLOAD_DIR, filename)
     if Path(filepath).exists():
         extra.append(extras.url(filepath, name=f"{currency_code} Wykres"))
+
+
+def test_switch_time(playwright, browser_name, currency_code, week_value, extra):
+    browser, context, page = setup_browser(playwright, browser_name)
+    switch_time(page, week_value, currency_code, browser_name=browser_name, extra=extra)
+    browser.close()
+
+def test_switch_currency_and_time(playwright, browser_name, currency_code, week_value, extra):
+    switch_currency_and_time(playwright, browser_name, currency_code, week_value, extra)
+
+@pytest.mark.parametrize("currency", ["USD", "CHF", "CZK"], ids=["USD", "CHF", "CZK"])
+def test_download_excel_8_weeks(playwright, browser_name, currency, extra):
+    browser, context, page = setup_browser(playwright, browser_name)
+    download_excel_for_currency_and_week(page, currency, "8", browser_name, extra)
+    browser.close()
+
+@pytest.mark.parametrize("currency", ["USD", "CHF", "CZK"], ids=["USD", "CHF", "CZK"])
+def test_download_chart_8_weeks(playwright, browser_name, currency, extra):
+    browser, context, page = setup_browser(playwright, browser_name)
+    download_chart_for_currency_and_week(page, currency, "8", browser_name, extra)
+    browser.close()
