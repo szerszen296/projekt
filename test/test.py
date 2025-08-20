@@ -53,8 +53,8 @@ def test_download_chart(page, currency_code, browser_name, extra):
         extra.append(extras.url(filepath, name=f"{currency_code} Wykres"))
 
 
-def test_switch_time(page, currency_code, week_value, extra):
-    switch_time(page, week_value, currency_code, extra=extra)
+def test_switch_time(page, currency_code, week_value, browser_name, extra):
+    switch_time(page, week_value, currency_code, browser_name=browser_name, extra=extra)
 
 
 def test_switch_currency_and_time(playwright, browser_name, currency_code, week_value, extra):
