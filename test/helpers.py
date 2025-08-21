@@ -5,8 +5,8 @@ from pathlib import Path
 from pytest_html import extras
 
 DOWNLOAD_DIR = "downloads"
-SUPPORTED_CURRENCIES = ["USD", "CHF", "CZK"]
-SUPPORTED_WEEK_VALUES = ["1", "4", "8"]
+CURRENCIES = ["USD", "CHF", "CZK"]
+WEEK_VALUES = ["1", "4", "8"]
 
 
 def compare_screenshots(page, before_path, after_path, change_desc, selector, extra=None):
@@ -19,19 +19,9 @@ def compare_screenshots(page, before_path, after_path, change_desc, selector, ex
         hash1 = hashlib.sha256(f1.read()).hexdigest()
         hash2 = hashlib.sha256(f2.read()).hexdigest()
 
-    match = hash1 == hash2
-    status = "IDENTYCZNE" if match else "RÓŻNE"
-    color = "green" if match else "red"
+    match = hash1 != hash2
 
-    html = f"""
-    <div style="color:{color}; font-weight:bold;">
-        Porównanie screenów ({change_desc}): {status}
-    </div>
-    <div><strong>SHA256 Screenshot BEFORE:</strong> {hash1}</div>
-    <div><strong>SHA256 Screenshot AFTER:</strong> {hash2}</div>
-    """
-    if extra:
-        extra.append(extras.html(html))
+    assert not match is False, "Zmiana waluty nie spowodowała zmiany widoku"
 
 def assert_currency_page_loaded(page, currency_code):
     rows = page.locator("#currency-table tbody tr")
@@ -231,3 +221,42 @@ def download_chart_for_currency_and_week(page, currency, week_value, browser_nam
     assert Path(chart_path).exists(), f"Nie znaleziono pliku wykresu: {chart_path}"
     assert chart_path.endswith(".png"), f"Zły format pliku: {chart_path}"
     extra.append(extras.url(chart_path, name=f"{currency} Wykres ({week_value} tygodni)"))
+
+def time_dropdown_has_8_weeks_option(playwright, browser_name):
+    browser, context, page = setup_browser(playwright, browser_name)
+    page.goto("http://localhost:1111/")
+    page.wait_for_selector("#time")
+
+    options = page.locator("#time option")
+    count = options.count()
+
+    found_8_weeks = False
+    for i in range(count):
+        value = options.nth(i).get_attribute("value")
+        if value == "8":
+            found_8_weeks = True
+            break
+
+    assert found_8_weeks, "Opcja 8 tygodni nie została znaleziona w dropdownie"
+
+    browser.close()
+
+def currency_dropdown_has_all_expected_options(playwright, browser_name):
+    expected_values = [
+        "USD", "EUR", "DKK", "GBP", "CHF",
+        "JPY", "CAD", "AUD", "NOK", "CZK"
+    ]
+
+    browser, context, page = setup_browser(playwright, browser_name)
+    page.goto("http://localhost:1111/")
+    page.wait_for_selector("#currency")
+
+    options = page.locator("#currency option")
+    count = options.count()
+
+    actual_values = [options.nth(i).get_attribute("value") for i in range(count)]
+
+    for val in expected_values:
+        assert val in actual_values, f"Brakuje waluty: {val}"
+
+    browser.close()

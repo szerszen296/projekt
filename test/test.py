@@ -7,14 +7,14 @@ from helpers import (
     assert_currency_page_loaded,
     switch_page,
     switch_currency,
-    download_excel,
-    download_chart,
     switch_time,
     switch_currency_and_time,
     download_excel_for_currency_and_week,
     download_chart_for_currency_and_week,
-    SUPPORTED_CURRENCIES,
-    SUPPORTED_WEEK_VALUES
+    CURRENCIES,
+    WEEK_VALUES,
+    time_dropdown_has_8_weeks_option,
+    currency_dropdown_has_all_expected_options
 )
 
 DOWNLOAD_DIR = "downloads"
@@ -34,38 +34,24 @@ def test_switch_page(page, currency_code, extra):
 def test_switch_currency(playwright, browser_name, extra):
     switch_currency(playwright, browser_name, extra)
 
-
-def test_download_excel(page, currency_code, browser_name, extra):
-    switch_page(page, currency_code, extra=extra)
-    download_excel(page, browser_name, currency_code)
-
-    filename = f"{browser_name}-{currency_code}_data.xlsx"
-    filepath = os.path.join(DOWNLOAD_DIR, filename)
-    if Path(filepath).exists():
-        extra.append(extras.url(filepath, name=f"{currency_code} Excel"))
-
-
-def test_download_chart(page, currency_code, browser_name, extra):
-    switch_page(page, currency_code, extra=extra)
-    download_chart(page, browser_name, currency_code)
-
-    filename = f"{browser_name}-{currency_code}_chart.png"
-    filepath = os.path.join(DOWNLOAD_DIR, filename)
-    if Path(filepath).exists():
-        extra.append(extras.url(filepath, name=f"{currency_code} Wykres"))
-
-
-
 def test_switch_currency_and_time(playwright, browser_name, currency_code, week_value, extra):
     switch_currency_and_time(playwright, browser_name, currency_code, week_value, extra)
 
 def test_switch_time(playwright, browser_name, currency_code, week_value, extra):
     switch_time(playwright, browser_name, currency_code, week_value, extra)
 
-@pytest.mark.parametrize("currency", SUPPORTED_CURRENCIES)
-def test_download_excel_8_weeks(page, currency, browser_name, extra):
-    download_excel_for_currency_and_week(page, currency, "8", browser_name, extra)
+@pytest.mark.parametrize("currency", CURRENCIES)
+@pytest.mark.parametrize("week_value", WEEK_VALUES)
+def test_download_excel_for_week(page, currency, week_value, browser_name, extra):
+    download_excel_for_currency_and_week(page, currency, week_value, browser_name, extra)
 
-@pytest.mark.parametrize("currency", SUPPORTED_CURRENCIES)
-def test_download_chart_8_weeks(page, currency, browser_name, extra):
-    download_chart_for_currency_and_week(page, currency, "8", browser_name, extra)
+@pytest.mark.parametrize("currency", CURRENCIES)
+@pytest.mark.parametrize("week_value", WEEK_VALUES)
+def test_download_chart_for_week(page, currency, week_value, browser_name, extra):
+    download_chart_for_currency_and_week(page, currency, week_value, browser_name, extra)
+
+def test_time_dropdown_has_8_weeks(playwright, browser_name):
+    time_dropdown_has_8_weeks_option(playwright, browser_name)
+
+def test_currency_dropdown_has_all_expected_options(playwright, browser_name):
+    currency_dropdown_has_all_expected_options(playwright, browser_name)
