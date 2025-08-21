@@ -12,7 +12,9 @@ from helpers import (
     switch_time,
     switch_currency_and_time,
     download_excel_for_currency_and_week,
-    download_chart_for_currency_and_week
+    download_chart_for_currency_and_week,
+    SUPPORTED_CURRENCIES,
+    SUPPORTED_WEEK_VALUES
 )
 
 DOWNLOAD_DIR = "downloads"
@@ -53,19 +55,17 @@ def test_download_chart(page, currency_code, browser_name, extra):
         extra.append(extras.url(filepath, name=f"{currency_code} Wykres"))
 
 
-def test_switch_time(page, currency_code, week_value, browser_name, extra):
-    switch_time(page, week_value, currency_code, browser_name=browser_name, extra=extra)
-
 
 def test_switch_currency_and_time(playwright, browser_name, currency_code, week_value, extra):
     switch_currency_and_time(playwright, browser_name, currency_code, week_value, extra)
 
+def test_switch_time(playwright, browser_name, currency_code, week_value, extra):
+    switch_time(playwright, browser_name, currency_code, week_value, extra)
 
-@pytest.mark.parametrize("currency", ["USD", "CHF", "CZK"])
+@pytest.mark.parametrize("currency", SUPPORTED_CURRENCIES)
 def test_download_excel_8_weeks(page, currency, browser_name, extra):
     download_excel_for_currency_and_week(page, currency, "8", browser_name, extra)
 
-
-@pytest.mark.parametrize("currency", ["USD", "CHF", "CZK"])
+@pytest.mark.parametrize("currency", SUPPORTED_CURRENCIES)
 def test_download_chart_8_weeks(page, currency, browser_name, extra):
     download_chart_for_currency_and_week(page, currency, "8", browser_name, extra)

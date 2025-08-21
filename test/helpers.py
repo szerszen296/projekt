@@ -5,6 +5,9 @@ from pathlib import Path
 from pytest_html import extras
 
 DOWNLOAD_DIR = "downloads"
+SUPPORTED_CURRENCIES = ["USD", "CHF", "CZK"]
+SUPPORTED_WEEK_VALUES = ["1", "4", "8"]
+
 
 def compare_screenshots(page, before_path, after_path, change_desc, selector, extra=None):
     page.screenshot(path=str(before_path), full_page=True)
@@ -128,69 +131,54 @@ def download_chart(page, browser_name, currency_code):
         assert Path(chart_path).exists(), f"Plik wykresu nie został pobrany: {chart_path}"
         assert chart_path.endswith(".png"), f"Zły format wykresu: {chart_path}"
 
-def switch_time(page, week_value, currency_code, browser_name=None, extra=None):
+def switch_time(playwright, browser_name, currency_code, week_value, extra):
+    browser, context, page = setup_browser(playwright, browser_name)
     page.goto("http://localhost:1111/")
     page.wait_for_selector("#currency-table", timeout=5000)
     page.select_option("#currency", value=currency_code)
-    before = Path(DOWNLOAD_DIR) / f"{browser_name}-before-time-{currency_code}-{week_value}.png"
-    after = Path(DOWNLOAD_DIR) / f"{browser_name}-after-time-{currency_code}-{week_value}.png"
-    page.screenshot(path=str(before), full_page=True)
+
+    name_prefix = f"{browser_name}-time-{currency_code}-{week_value}"
+    before_path = Path(DOWNLOAD_DIR) / f"{name_prefix}-before.png"
+    after_path = Path(DOWNLOAD_DIR) / f"{name_prefix}-after.png"
+
+    page.screenshot(path=str(before_path), full_page=True)
+
     page.select_option("#time", value=week_value)
-    page.click("button[type='submit']")
-    page.wait_for_selector(f"img[alt='Wykres {currency_code}']", timeout=5000)
-    page.screenshot(path=str(after), full_page=True)
 
-    with open(before, "rb") as f1, open(after, "rb") as f2:
-        hash1 = hashlib.sha256(f1.read()).hexdigest()
-        hash2 = hashlib.sha256(f2.read()).hexdigest()
+    compare_screenshots(
+        page=page,
+        before_path=before_path,
+        after_path=after_path,
+        change_desc=f"zmiana czasu na {week_value} tygodni dla waluty {currency_code}",
+        selector=f"img[alt='Wykres {currency_code}']",
+        extra=extra
+    )
 
-    match = hash1 == hash2
-    status = "IDENTYCZNE" if match else "RÓŻNE"
-    color = "green" if match else "red"
-
-    html = f"""
-    <div style="color:{color}; font-weight:bold;">
-        Porównanie screenów po zmianie czasu ({week_value} tygodni) dla waluty {currency_code}: {status}
-    </div>
-    <div><strong>SHA256 Screenshot BEFORE:</strong> {hash1}</div>
-    <div><strong>SHA256 Screenshot AFTER:</strong> {hash2}</div>
-    """
-
-    if extra is not None:
-        extra.append(extras.html(html))
+    browser.close()
 
 def switch_currency_and_time(playwright, browser_name, currency_code, week_value, extra):
     browser, context, page = setup_browser(playwright, browser_name)
     page.goto("http://localhost:1111/")
     page.wait_for_selector("#currency-table", timeout=5000)
+
     page.select_option("#currency", value=currency_code)
     page.select_option("#time", value=week_value)
 
-    before = Path(DOWNLOAD_DIR) / f"{browser_name}-before-{currency_code}-{week_value}.png"
-    after = Path(DOWNLOAD_DIR) / f"{browser_name}-after-{currency_code}-{week_value}.png"
+    name_prefix = f"{browser_name}-currency-time-{currency_code}-{week_value}"
+    before_path = Path(DOWNLOAD_DIR) / f"{name_prefix}-before.png"
+    after_path = Path(DOWNLOAD_DIR) / f"{name_prefix}-after.png"
 
-    page.screenshot(path=str(before), full_page=True)
-    page.click("button[type='submit']")
-    page.wait_for_selector(f"img[alt='Wykres {currency_code}']", timeout=5000)
-    page.screenshot(path=str(after), full_page=True)
+    page.screenshot(path=str(before_path), full_page=True)
 
-    with open(before, "rb") as f1, open(after, "rb") as f2:
-        hash1 = hashlib.sha256(f1.read()).hexdigest()
-        hash2 = hashlib.sha256(f2.read()).hexdigest()
+    compare_screenshots(
+        page=page,
+        before_path=before_path,
+        after_path=after_path,
+        change_desc=f"zmiana waluty na {currency_code} i czasu na {week_value} tygodni",
+        selector=f"img[alt='Wykres {currency_code}']",
+        extra=extra
+    )
 
-    match = hash1 == hash2
-    status = "IDENTYCZNE" if match else "RÓŻNE"
-    color = "green" if match else "red"
-
-    html = f"""
-    <div style="color:{color}; font-weight:bold;">
-        Porównanie screenów po zmianie waluty ({currency_code}) i czasu ({week_value} tygodni): {status}
-    </div>
-    <div><strong>SHA256 Screenshot BEFORE:</strong> {hash1}</div>
-    <div><strong>SHA256 Screenshot AFTER:</strong> {hash2}</div>
-    """
-
-    extra.append(extras.html(html))
     browser.close()
 
 def download_excel_for_currency_and_week(page, currency, week_value, browser_name, extra):

@@ -5,6 +5,7 @@ import subprocess
 import signal
 import time
 from pathlib import Path
+from helpers import SUPPORTED_CURRENCIES, SUPPORTED_WEEK_VALUES
 
 DOWNLOAD_DIR = Path("downloads")
 
@@ -17,30 +18,26 @@ def server():
         preexec_fn=os.setsid
     )
     time.sleep(2)
-    
     yield
-    
     os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
     proc.wait()
 
+@pytest.fixture(scope="session", autouse=True)
+def ensure_download_dir():
+    DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(scope="session", autouse=True)
 def clean_download_dir():
-    """
-    Przed każdym testem usuń zawartość katalogu downloads.
-    """
     if DOWNLOAD_DIR.exists():
-        shutil.rmtree(DOWNLOAD_DIR)
+        shutil.rmtree(DOWNLOAD_DIR, ignore_errors=True)
     DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
     yield
 
-
-
-@pytest.fixture(params=["USD", "CHF", "CZK"])
+@pytest.fixture(params=SUPPORTED_CURRENCIES)
 def currency_code(request):
     return request.param
 
-@pytest.fixture(params=["1", "4", "8"])
+@pytest.fixture(params=SUPPORTED_WEEK_VALUES)
 def week_value(request):
     return request.param
 
