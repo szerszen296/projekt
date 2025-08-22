@@ -56,15 +56,15 @@ def test_switch_time(playwright, browser_name, dynamic_currency_codes, dynamic_w
         for week_value in dynamic_week_values:
             switch_time(playwright, browser_name, currency, week_value, extra)
 
-def test_download_excel_for_week(page, browser_name, dynamic_currency_codes, dynamic_week_values, extra):
-    for currency in dynamic_currency_codes:
-        for week_value in dynamic_week_values:
-            download_excel_for_currency_and_week(page, currency, week_value, browser_name, extra)
+def test_download_chart_for_week(playwright, browser_name, currency, week, extra):
+    browser, context, page = setup_browser(playwright, browser_name)
+    download_chart_for_currency_and_week(page, currency, week, browser_name, extra)
+    browser.close()
 
-def test_download_chart_for_week(page, browser_name, dynamic_currency_codes, dynamic_week_values, extra):
-    for currency in dynamic_currency_codes:
-        for week_value in dynamic_week_values:
-            download_chart_for_currency_and_week(page, currency, week_value, browser_name, extra)
+def test_download_excel_for_week(playwright, browser_name, currency, week, extra):
+    browser, context, page = setup_browser(playwright, browser_name)
+    download_excel_for_currency_and_week(page, currency, week, browser_name, extra)
+    browser.close()
 
 def test_all_currency_options_present(playwright, browser_name):
     check_all_currency_options_present(playwright, browser_name)

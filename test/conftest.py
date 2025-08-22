@@ -28,9 +28,11 @@ def is_port_in_use(port):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         return s.connect_ex(('localhost', port)) == 0
 
+server_process = None
+
 @pytest.fixture(scope="session", autouse=True)
 def server():
-    server_process = None
+    global server_process
     port = 1111
 
     if not is_port_in_use(port):
@@ -68,17 +70,6 @@ def clean_download_dir():
     DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
     yield
 
-def test_open_currency_page(page, currency_code):
-    url = f"http://localhost:1111/?currency={currency_code}"
-    page.goto(url)
-    assert_currency_page_loaded(page, currency_code)
-
-def test_switch_page(page, currency_code, extra):
-    switch_page(page, currency_code, extra=extra)
-
-def test_switch_currency(playwright, browser_name, extra):
-    switch_currency(playwright, browser_name, extra)
-
 @pytest.fixture(scope="session")
 def dynamic_currency_codes(playwright, browser_name):
     browser, context, page = setup_browser(playwright, browser_name)
@@ -93,23 +84,72 @@ def dynamic_week_values(playwright, browser_name):
     browser.close()
     return select_three_options(values)
 
-def test_switch_currency_and_time(playwright, browser_name, dynamic_currency_codes, dynamic_week_values, extra):
-    for currency in dynamic_currency_codes:
-        for week_value in dynamic_week_values:
-            switch_currency_and_time(playwright, browser_name, currency, week_value, extra)
+@pytest.fixture(scope="session")
+def currency_options(playwright, browser_name):
+    browser, context, page = setup_browser(playwright, browser_name)
+    page.goto("http://localhost:1111/")
+    page.wait_for_selector("#currency")
 
-def test_switch_time(playwright, browser_name, dynamic_currency_codes, dynamic_week_values, extra):
-    for currency in dynamic_currency_codes:
-        for week_value in dynamic_week_values:
-            switch_time(playwright, browser_name, currency, week_value, extra)
+    options = page.locator("#currency option")
+    count = options.count()
+    all_values = [options.nth(i).get_attribute("value") for i in range(count)]
+    browser.close()
 
-def test_download_excel_for_week(page, browser_name, dynamic_currency_codes, dynamic_week_values, extra):
-    for currency in dynamic_currency_codes:
-        for week_value in dynamic_week_values:
-            download_excel_for_currency_and_week(page, currency, week_value, browser_name, extra)
+    return select_three_options(all_values)
 
-def test_download_chart_for_week(page, browser_name, dynamic_currency_codes, dynamic_week_values, extra):
-    for currency in dynamic_currency_codes:
-        for week_value in dynamic_week_values:
-            download_chart_for_currency_and_week(page, currency, week_value, browser_name, extra)
+@pytest.fixture(scope="session")
+def time_options(playwright, browser_name):
+    browser, context, page = setup_browser(playwright, browser_name)
+    page.goto("http://localhost:1111/")
+    page.wait_for_selector("#time")
 
+    options = page.locator("#time option")
+    count = options.count()
+    all_values = [options.nth(i).get_attribute("value") for i in range(count)]
+    browser.close()
+
+    return select_three_options(all_values)
+
+def select_three_options(options_list):
+    if not options_list:
+        return []
+    first = options_list[0]
+    middle = options_list[len(options_list) // 2]
+    last = options_list[-1]
+    return list(dict.fromkeys([first, middle, last]))
+
+def pytest_generate_tests(metafunc):
+    global server_process
+    port = 1111
+
+    if not is_port_in_use(port):
+        app_path = Path(__file__).parent.parent / "app.py"
+        server_process = subprocess.Popen(
+            ["python3", str(app_path)],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            preexec_fn=os.setsid if os.name != 'nt' else None,
+            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0
+        )
+        time.sleep(2)
+
+    if "currency" in metafunc.fixturenames or "week" in metafunc.fixturenames:
+        from playwright.sync_api import sync_playwright
+
+        with sync_playwright() as p:
+            browser = p.chromium.launch()
+            context = browser.new_context()
+            page = context.new_page()
+            page.goto("http://localhost:1111/")
+
+            if "currency" in metafunc.fixturenames:
+                all_currency_options = get_currency_options(page)
+                selected_currencies = select_three_options(all_currency_options)
+                metafunc.parametrize("currency", selected_currencies)
+
+            if "week" in metafunc.fixturenames:
+                all_time_options = get_time_options(page)
+                selected_weeks = select_three_options(all_time_options)
+                metafunc.parametrize("week", selected_weeks)
+
+            browser.close()
