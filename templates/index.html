@@ -13,7 +13,6 @@
     {% endif %}
 
     <div class="form-container">
-        <!-- Formularz wyboru waluty -->
         <form method="get" action="/">
             <label for="currency">Wybierz walutę:</label>
             <select name="currency" id="currency">
@@ -24,7 +23,6 @@
                 {% endfor %}
             </select>
 
-            <!-- Formularz wyboru czasu -->
             <label for="time">Wybierz zakres czasowy:</label>
             <select name="time" id="time">
                 <option value="1" {% if request.args.get('time') == '1' %}selected{% endif %}>1 tydzień</option>
@@ -52,7 +50,6 @@
         </tbody>
     </table>
 
-    <!-- Przeniesienie przycisku pobrania Excela poniżej tabeli -->
     <a href="{{ url_for('download_excel') }}?currency={{ code }}&time={{ request.args.get('time', 1) }}">
         <button>Pobierz dane (Excel)</button>
     </a>

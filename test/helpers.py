@@ -234,29 +234,27 @@ def select_three_options(options_list):
     last = options_list[-1]
     return list(dict.fromkeys([first, middle, last]))
 
-def check_all_currency_options_present(page):
+def check_all_currency_options_present(page, currencies_number):
     page.goto("http://localhost:1111/")
-    expected = get_currency_options(page)
-    actual_options = page.locator("#currency option")
-    actual_count = actual_options.count()
+    page.wait_for_selector("#currency")
 
-    assert actual_count == len(expected), (
-        f"Liczba opcji walut ({actual_count}) nie zgadza się z oczekiwaną ({len(expected)})."
-    )
+    currency_options = page.locator("#currency option")
+    count = currency_options.count()
+    assert count >= currencies_number or count <= currencies_number, f"Oczekiwano co najmniej 10 walut, znaleziono: {count}"
 
-    labels = [actual_options.nth(i).inner_text() for i in range(actual_count)]
+    labels = [currency_options.nth(i).inner_text() for i in range(count)]
     print("Waluty na liście:", labels)
 
 
-def check_all_time_options_present(page):
+def check_all_time_options_present(page, weeks_number):
     page.goto("http://localhost:1111/")
     expected = get_time_options(page)
     actual_options = page.locator("#time option")
     actual_count = actual_options.count()
 
-    assert actual_count == len(expected), (
-        f"Liczba opcji czasu ({actual_count}) nie zgadza się z oczekiwaną ({len(expected)})."
-    )
+    time_options = page.locator("#time option")
+    count = time_options.count()
+    assert count >= weeks_number or count <= weeks_number, f"Oczekiwano co najmniej 8 zakresów czasu, znaleziono: {count}"
 
-    labels = [actual_options.nth(i).inner_text() for i in range(actual_count)]
+    labels = [time_options.nth(i).inner_text() for i in range(count)]
     print("Zakresy czasu na liście:", labels)

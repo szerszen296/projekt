@@ -40,5 +40,6 @@ git clone https://github.com/szerszen296/projekt.git
 * Zalecane jest używanie 2 rdzenieniów do testów:
   - pytest -n 2 test.py
 * Raport generuje się w formacie html w katalogu gdzie znajdują się testy.
-
+# Dodawanie nowych walut i tygodni do wyboru:
+  - UWAGA! ZA KAŻDYM WPROWADZENIEM NOWEJ WALUTY CZY TYGODNI TRZEBA WPROWADZIĆ ICH ILOŚĆ DO ZMIENNEJ ZNAJDUJĄCEJ SIE W FIXTURZE W conftest.py. INACZEJ TESTY ICH DOTYCZĄCE NIE ZADZIAŁAJĄ! Zmienne to: weeks_numbers, currecies_numbers
 

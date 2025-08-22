@@ -24,7 +24,6 @@ DOWNLOAD_DIR = Path("downloads")
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
 def is_port_in_use(port):
-    """Sprawdza, czy port jest już zajęty (czy serwer działa)."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         return s.connect_ex(('localhost', port)) == 0
 
@@ -166,3 +165,13 @@ def page(browser):
     page = context.new_page()
     yield page
     context.close()
+
+@pytest.fixture(scope="function")
+def currencies_number():
+    currencies_number = 8
+    yield currencies_number
+
+@pytest.fixture(scope="function")
+def weeks_number():
+    weeks_number = 8
+    yield weeks_number

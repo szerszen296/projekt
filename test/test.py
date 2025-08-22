@@ -48,8 +48,8 @@ def test_download_chart_for_week(page, browser_name, currency, week, extra):
 def test_download_excel_for_week(page, browser_name, currency, week, extra):
     download_excel_for_currency_and_week(page, currency, week, browser_name, extra)
 
-def test_all_currency_options_present(page):
-    check_all_currency_options_present(page)
+def test_all_currency_options_present(page, currencies_number):
+    check_all_currency_options_present(page, currencies_number)
 
-def test_all_time_options_present(page):
-    check_all_time_options_present(page)
+def test_all_time_options_present(page, weeks_number):
+    check_all_time_options_present(page, weeks_number)
