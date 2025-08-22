@@ -1,8 +1,5 @@
 import pytest
 import os
-from pathlib import Path
-from pytest_html import extras
-
 from helpers import (
     assert_currency_page_loaded,
     switch_page,
@@ -11,47 +8,66 @@ from helpers import (
     switch_currency_and_time,
     download_excel_for_currency_and_week,
     download_chart_for_currency_and_week,
-    CURRENCIES,
-    WEEK_VALUES,
-    time_dropdown_has_8_weeks_option,
-    currency_dropdown_has_all_expected_options
+    get_currency_options,
+    get_time_options,
+    select_three_options,
+    setup_browser,
+    check_all_currency_options_present,
+    check_all_time_options_present
 )
 
 DOWNLOAD_DIR = "downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
+def test_open_currency_page_dynamic(page, dynamic_currency_codes):
+    for currency_code in dynamic_currency_codes:
+        url = f"http://localhost:1111/?currency={currency_code}"
+        page.goto(url)
+        assert_currency_page_loaded(page, currency_code)
 
-def test_open_currency_page(page, currency_code):
-    url = f"http://localhost:1111/?currency={currency_code}"
-    page.goto(url)
-    assert_currency_page_loaded(page, currency_code)
-
-
-def test_switch_page(page, currency_code, extra):
-    switch_page(page, currency_code, extra=extra)
-
+def test_switch_page_dynamic(page, dynamic_currency_codes, extra):
+    for currency_code in dynamic_currency_codes:
+        switch_page(page, currency_code, extra=extra)
 
 def test_switch_currency(playwright, browser_name, extra):
     switch_currency(playwright, browser_name, extra)
 
-def test_switch_currency_and_time(playwright, browser_name, currency_code, week_value, extra):
-    switch_currency_and_time(playwright, browser_name, currency_code, week_value, extra)
+@pytest.fixture(scope="session")
+def dynamic_currency_codes(playwright, browser_name):
+    browser, context, page = setup_browser(playwright, browser_name)
+    values = get_currency_options(page)
+    browser.close()
+    return select_three_options(values)
 
-def test_switch_time(playwright, browser_name, currency_code, week_value, extra):
-    switch_time(playwright, browser_name, currency_code, week_value, extra)
+@pytest.fixture(scope="session")
+def dynamic_week_values(playwright, browser_name):
+    browser, context, page = setup_browser(playwright, browser_name)
+    values = get_time_options(page)
+    browser.close()
+    return select_three_options(values)
 
-@pytest.mark.parametrize("currency", CURRENCIES)
-@pytest.mark.parametrize("week_value", WEEK_VALUES)
-def test_download_excel_for_week(page, currency, week_value, browser_name, extra):
-    download_excel_for_currency_and_week(page, currency, week_value, browser_name, extra)
+def test_switch_currency_and_time(playwright, browser_name, dynamic_currency_codes, dynamic_week_values, extra):
+    for currency in dynamic_currency_codes:
+        for week_value in dynamic_week_values:
+            switch_currency_and_time(playwright, browser_name, currency, week_value, extra)
 
-@pytest.mark.parametrize("currency", CURRENCIES)
-@pytest.mark.parametrize("week_value", WEEK_VALUES)
-def test_download_chart_for_week(page, currency, week_value, browser_name, extra):
-    download_chart_for_currency_and_week(page, currency, week_value, browser_name, extra)
+def test_switch_time(playwright, browser_name, dynamic_currency_codes, dynamic_week_values, extra):
+    for currency in dynamic_currency_codes:
+        for week_value in dynamic_week_values:
+            switch_time(playwright, browser_name, currency, week_value, extra)
 
-def test_time_dropdown_has_8_weeks(playwright, browser_name):
-    time_dropdown_has_8_weeks_option(playwright, browser_name)
+def test_download_excel_for_week(page, browser_name, dynamic_currency_codes, dynamic_week_values, extra):
+    for currency in dynamic_currency_codes:
+        for week_value in dynamic_week_values:
+            download_excel_for_currency_and_week(page, currency, week_value, browser_name, extra)
 
-def test_currency_dropdown_has_all_expected_options(playwright, browser_name):
-    currency_dropdown_has_all_expected_options(playwright, browser_name)
+def test_download_chart_for_week(page, browser_name, dynamic_currency_codes, dynamic_week_values, extra):
+    for currency in dynamic_currency_codes:
+        for week_value in dynamic_week_values:
+            download_chart_for_currency_and_week(page, currency, week_value, browser_name, extra)
+
+def test_all_currency_options_present(playwright, browser_name):
+    check_all_currency_options_present(playwright, browser_name)
+
+def test_all_time_options_present(playwright, browser_name):
+    check_all_time_options_present(playwright, browser_name)

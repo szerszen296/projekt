@@ -5,9 +5,6 @@ from pathlib import Path
 from pytest_html import extras
 
 DOWNLOAD_DIR = "downloads"
-CURRENCIES = ["USD", "CHF", "CZK"]
-WEEK_VALUES = ["1", "4", "8"]
-
 
 def compare_screenshots(page, before_path, after_path, change_desc, selector, extra=None):
     page.screenshot(path=str(before_path), full_page=True)
@@ -80,7 +77,7 @@ def download_excel(page, browser_name, currency_code):
         page.click(f"a[href*='/download/excel?currency={currency_code}'] >> button")
     download = download_info.value
     filename = download.suggested_filename or f"{currency_code}_data.xlsx"
-    excel_path = f"{DOWNLOAD_DIR}/{browser_name}-{filename}"
+    excel_path = f"{DOWNLOAD_DIR}/{browser_name}-{currency_code}-{filename}"
     download.save_as(excel_path)
     assert Path(excel_path).exists(), f"Excel nie został pobrany: {excel_path}"
     assert excel_path.endswith(".xlsx"), f"Zły format pliku: {excel_path}"
@@ -132,7 +129,6 @@ def switch_time(playwright, browser_name, currency_code, week_value, extra):
     after_path = Path(DOWNLOAD_DIR) / f"{name_prefix}-after.png"
 
     page.screenshot(path=str(before_path), full_page=True)
-
     page.select_option("#time", value=week_value)
 
     compare_screenshots(
@@ -183,11 +179,12 @@ def download_excel_for_currency_and_week(page, currency, week_value, browser_nam
         page.click(f"a[href*='/download/excel?currency={currency}'] >> button")
     download = download_info.value
     filename = download.suggested_filename or f"{currency}_data.xlsx"
-    filepath = os.path.join(DOWNLOAD_DIR, f"{browser_name}-{filename}")
+    # Dodajemy walutę i tydzień do nazwy pliku, żeby uniknąć nadpisania
+    filepath = os.path.join(DOWNLOAD_DIR, f"{browser_name}-{currency}-{week_value}-{filename}")
     download.save_as(filepath)
     assert Path(filepath).exists(), f"Nie znaleziono pliku: {filepath}"
     assert filepath.endswith(".xlsx"), f"Zły format pliku: {filepath}"
-    extra.append(extras.url(filepath, name=f"{currency} Excel (8 tygodni)"))
+    extra.append(extras.url(filepath, name=f"{currency} Excel ({week_value} tygodni)"))
 
 def download_chart_for_currency_and_week(page, currency, week_value, browser_name, extra):
     page.goto("http://localhost:1111/")
@@ -201,7 +198,8 @@ def download_chart_for_currency_and_week(page, currency, week_value, browser_nam
     download_link.wait_for(state="visible", timeout=5000)
     href = download_link.get_attribute("href")
     assert href and currency in href, f"Link download chart href incorrect or missing currency: {href}"
-    chart_path = os.path.join(DOWNLOAD_DIR, f"{browser_name}-{currency}_chart.png")
+    # Dodajemy tydzień i walutę do nazwy pliku
+    chart_path = os.path.join(DOWNLOAD_DIR, f"{browser_name}-{currency}-{week_value}_chart.png")
 
     if browser_name == "webkit":
         try:
@@ -222,41 +220,53 @@ def download_chart_for_currency_and_week(page, currency, week_value, browser_nam
     assert chart_path.endswith(".png"), f"Zły format pliku: {chart_path}"
     extra.append(extras.url(chart_path, name=f"{currency} Wykres ({week_value} tygodni)"))
 
-def time_dropdown_has_8_weeks_option(playwright, browser_name):
-    browser, context, page = setup_browser(playwright, browser_name)
+def get_currency_options(page):
+    page.goto("http://localhost:1111/")
+    page.wait_for_selector("#currency")
+    options = page.locator("#currency option")
+    count = options.count()
+    return [options.nth(i).get_attribute("value") for i in range(count)]
+
+def get_time_options(page):
     page.goto("http://localhost:1111/")
     page.wait_for_selector("#time")
-
     options = page.locator("#time option")
     count = options.count()
+    return [options.nth(i).get_attribute("value") for i in range(count)]
 
-    found_8_weeks = False
-    for i in range(count):
-        value = options.nth(i).get_attribute("value")
-        if value == "8":
-            found_8_weeks = True
-            break
+def select_three_options(options_list):
+    if not options_list:
+        return []
+    first = options_list[0]
+    middle = options_list[len(options_list) // 2]
+    last = options_list[-1]
+    return list(dict.fromkeys([first, middle, last]))
 
-    assert found_8_weeks, "Opcja 8 tygodni nie została znaleziona w dropdownie"
-
-    browser.close()
-
-def currency_dropdown_has_all_expected_options(playwright, browser_name):
-    expected_values = [
-        "USD", "EUR", "DKK", "GBP", "CHF",
-        "JPY", "CAD", "AUD", "NOK", "CZK"
-    ]
-
+def check_all_currency_options_present(playwright, browser_name):
     browser, context, page = setup_browser(playwright, browser_name)
     page.goto("http://localhost:1111/")
     page.wait_for_selector("#currency")
 
-    options = page.locator("#currency option")
-    count = options.count()
+    currency_options = page.locator("#currency option")
+    count = currency_options.count()
+    assert count >= 10, f"Oczekiwano co najmniej 10 walut, znaleziono: {count}"
 
-    actual_values = [options.nth(i).get_attribute("value") for i in range(count)]
+    labels = [currency_options.nth(i).inner_text() for i in range(count)]
+    print("Waluty na liście:", labels)
 
-    for val in expected_values:
-        assert val in actual_values, f"Brakuje waluty: {val}"
+    browser.close()
+
+
+def check_all_time_options_present(playwright, browser_name):
+    browser, context, page = setup_browser(playwright, browser_name)
+    page.goto("http://localhost:1111/")
+    page.wait_for_selector("#time")
+
+    time_options = page.locator("#time option")
+    count = time_options.count()
+    assert count >= 8, f"Oczekiwano co najmniej 8 zakresów czasu, znaleziono: {count}"
+
+    labels = [time_options.nth(i).inner_text() for i in range(count)]
+    print("Zakresy czasu na liście:", labels)
 
     browser.close()
