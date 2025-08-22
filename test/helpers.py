@@ -52,8 +52,7 @@ def switch_page(page, currency_code, browser_name=None, extra=None):
     page.click("button[type='submit']")
     assert_currency_page_loaded(page, currency_code)
 
-def switch_currency(browser, browser_name, extra):
-    page = browser.new_page()
+def switch_currency(page, browser_name, extra):
     page.goto("http://localhost:1111/")
     page.wait_for_selector("#currency-table", timeout=5000)
     page.select_option("#currency", value="USD")
@@ -70,7 +69,6 @@ def switch_currency(browser, browser_name, extra):
         extra=extra
     )
 
-    browser.close()
 
 def download_excel(page, browser_name, currency_code):
     with page.expect_download() as download_info:
@@ -118,8 +116,7 @@ def download_chart(page, browser_name, currency_code):
         assert Path(chart_path).exists(), f"Plik wykresu nie został pobrany: {chart_path}"
         assert chart_path.endswith(".png"), f"Zły format wykresu: {chart_path}"
 
-def switch_time(browser, browser_name, currency_code, week_value, extra):
-    page = browser.new_page()
+def switch_time(page, browser_name, currency_code, week_value, extra):
     page.goto("http://localhost:1111/")
     page.wait_for_selector("#currency-table", timeout=5000)
     page.select_option("#currency", value=currency_code)
@@ -141,8 +138,7 @@ def switch_time(browser, browser_name, currency_code, week_value, extra):
     )
 
 
-def switch_currency_and_time(browser, browser_name, currency_code, week_value, extra):
-    page = browser.new_page()
+def switch_currency_and_time(page, browser_name, currency_code, week_value, extra):
     page.goto("http://localhost:1111/")
     page.wait_for_selector("#currency-table", timeout=5000)
 
@@ -238,8 +234,7 @@ def select_three_options(options_list):
     last = options_list[-1]
     return list(dict.fromkeys([first, middle, last]))
 
-def check_all_currency_options_present(browser):
-    page = browser.new_page()
+def check_all_currency_options_present(page):
     page.goto("http://localhost:1111/")
     expected = get_currency_options(page)
     actual_options = page.locator("#currency option")
@@ -253,8 +248,7 @@ def check_all_currency_options_present(browser):
     print("Waluty na liście:", labels)
 
 
-def check_all_time_options_present(browser):
-    page = browser.new_page()
+def check_all_time_options_present(page):
     page.goto("http://localhost:1111/")
     expected = get_time_options(page)
     actual_options = page.locator("#time option")
@@ -266,4 +260,3 @@ def check_all_time_options_present(browser):
 
     labels = [actual_options.nth(i).inner_text() for i in range(actual_count)]
     print("Zakresy czasu na liście:", labels)
-    browser.close()

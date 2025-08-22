@@ -159,3 +159,10 @@ def browser(playwright, browser_name):
     browser, context, page = setup_browser(playwright, browser_name)
     yield browser
     browser.close()
+
+@pytest.fixture(scope="function")
+def page(browser):
+    context = browser.new_context(accept_downloads=True)
+    page = context.new_page()
+    yield page
+    context.close()
