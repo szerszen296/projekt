@@ -153,3 +153,9 @@ def pytest_generate_tests(metafunc):
                 metafunc.parametrize("week", selected_weeks)
 
             browser.close()
+
+@pytest.fixture(scope="function")
+def browser(playwright, browser_name):
+    browser, context, page = setup_browser(playwright, browser_name)
+    yield browser
+    browser.close()

@@ -29,45 +29,29 @@ def test_switch_page_dynamic(page, dynamic_currency_codes, extra):
     for currency_code in dynamic_currency_codes:
         switch_page(page, currency_code, extra=extra)
 
-def test_switch_currency(playwright, browser_name, extra):
-    switch_currency(playwright, browser_name, extra)
+def test_switch_currency(browser, browser_name, extra):
+    switch_currency(browser, browser_name, extra)
 
-@pytest.fixture(scope="session")
-def dynamic_currency_codes(playwright, browser_name):
-    browser, context, page = setup_browser(playwright, browser_name)
-    values = get_currency_options(page)
-    browser.close()
-    return select_three_options(values)
-
-@pytest.fixture(scope="session")
-def dynamic_week_values(playwright, browser_name):
-    browser, context, page = setup_browser(playwright, browser_name)
-    values = get_time_options(page)
-    browser.close()
-    return select_three_options(values)
-
-def test_switch_currency_and_time(playwright, browser_name, dynamic_currency_codes, dynamic_week_values, extra):
+def test_switch_currency_and_time(browser, browser_name, dynamic_currency_codes, dynamic_week_values, extra):
     for currency in dynamic_currency_codes:
         for week_value in dynamic_week_values:
-            switch_currency_and_time(playwright, browser_name, currency, week_value, extra)
+            switch_currency_and_time(browser, browser_name, currency, week_value, extra)
 
-def test_switch_time(playwright, browser_name, dynamic_currency_codes, dynamic_week_values, extra):
+def test_switch_time(browser, browser_name, dynamic_currency_codes, dynamic_week_values, extra):
     for currency in dynamic_currency_codes:
         for week_value in dynamic_week_values:
-            switch_time(playwright, browser_name, currency, week_value, extra)
+            switch_time(browser, browser_name, currency, week_value, extra)
 
-def test_download_chart_for_week(playwright, browser_name, currency, week, extra):
-    browser, context, page = setup_browser(playwright, browser_name)
-    download_chart_for_currency_and_week(page, currency, week, browser_name, extra)
-    browser.close()
+def test_download_chart_for_week(browser, currency, week, extra):
+    page = browser.new_page()
+    download_chart_for_currency_and_week(page, currency, week, browser.browser_type.name, extra)
 
-def test_download_excel_for_week(playwright, browser_name, currency, week, extra):
-    browser, context, page = setup_browser(playwright, browser_name)
-    download_excel_for_currency_and_week(page, currency, week, browser_name, extra)
-    browser.close()
+def test_download_excel_for_week(browser, currency, week, extra):
+    page = browser.new_page()
+    download_excel_for_currency_and_week(page, currency, week, browser.browser_type.name, extra)
 
-def test_all_currency_options_present(playwright, browser_name):
-    check_all_currency_options_present(playwright, browser_name)
+def test_all_currency_options_present(browser):
+    check_all_currency_options_present(browser)
 
-def test_all_time_options_present(playwright, browser_name):
-    check_all_time_options_present(playwright, browser_name)
+def test_all_time_options_present(browser):
+    check_all_time_options_present(browser)

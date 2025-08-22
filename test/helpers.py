@@ -52,8 +52,8 @@ def switch_page(page, currency_code, browser_name=None, extra=None):
     page.click("button[type='submit']")
     assert_currency_page_loaded(page, currency_code)
 
-def switch_currency(playwright, browser_name, extra):
-    browser, context, page = setup_browser(playwright, browser_name)
+def switch_currency(browser, browser_name, extra):
+    page = browser.new_page()
     page.goto("http://localhost:1111/")
     page.wait_for_selector("#currency-table", timeout=5000)
     page.select_option("#currency", value="USD")
@@ -118,8 +118,8 @@ def download_chart(page, browser_name, currency_code):
         assert Path(chart_path).exists(), f"Plik wykresu nie został pobrany: {chart_path}"
         assert chart_path.endswith(".png"), f"Zły format wykresu: {chart_path}"
 
-def switch_time(playwright, browser_name, currency_code, week_value, extra):
-    browser, context, page = setup_browser(playwright, browser_name)
+def switch_time(browser, browser_name, currency_code, week_value, extra):
+    page = browser.new_page()
     page.goto("http://localhost:1111/")
     page.wait_for_selector("#currency-table", timeout=5000)
     page.select_option("#currency", value=currency_code)
@@ -140,10 +140,9 @@ def switch_time(playwright, browser_name, currency_code, week_value, extra):
         extra=extra
     )
 
-    browser.close()
 
-def switch_currency_and_time(playwright, browser_name, currency_code, week_value, extra):
-    browser, context, page = setup_browser(playwright, browser_name)
+def switch_currency_and_time(browser, browser_name, currency_code, week_value, extra):
+    page = browser.new_page()
     page.goto("http://localhost:1111/")
     page.wait_for_selector("#currency-table", timeout=5000)
 
@@ -165,7 +164,6 @@ def switch_currency_and_time(playwright, browser_name, currency_code, week_value
         extra=extra
     )
 
-    browser.close()
 
 def download_excel_for_currency_and_week(page, currency, week_value, browser_name, extra):
     page.goto("http://localhost:1111/")
@@ -179,7 +177,6 @@ def download_excel_for_currency_and_week(page, currency, week_value, browser_nam
         page.click(f"a[href*='/download/excel?currency={currency}'] >> button")
     download = download_info.value
     filename = download.suggested_filename or f"{currency}_data.xlsx"
-    # Dodajemy walutę i tydzień do nazwy pliku, żeby uniknąć nadpisania
     filepath = os.path.join(DOWNLOAD_DIR, f"{browser_name}-{currency}-{week_value}-{filename}")
     download.save_as(filepath)
     assert Path(filepath).exists(), f"Nie znaleziono pliku: {filepath}"
@@ -198,7 +195,6 @@ def download_chart_for_currency_and_week(page, currency, week_value, browser_nam
     download_link.wait_for(state="visible", timeout=5000)
     href = download_link.get_attribute("href")
     assert href and currency in href, f"Link download chart href incorrect or missing currency: {href}"
-    # Dodajemy tydzień i walutę do nazwy pliku
     chart_path = os.path.join(DOWNLOAD_DIR, f"{browser_name}-{currency}-{week_value}_chart.png")
 
     if browser_name == "webkit":
@@ -242,31 +238,32 @@ def select_three_options(options_list):
     last = options_list[-1]
     return list(dict.fromkeys([first, middle, last]))
 
-def check_all_currency_options_present(playwright, browser_name):
-    browser, context, page = setup_browser(playwright, browser_name)
+def check_all_currency_options_present(browser):
+    page = browser.new_page()
     page.goto("http://localhost:1111/")
-    page.wait_for_selector("#currency")
+    expected = get_currency_options(page)
+    actual_options = page.locator("#currency option")
+    actual_count = actual_options.count()
 
-    currency_options = page.locator("#currency option")
-    count = currency_options.count()
-    assert count >= 10, f"Oczekiwano co najmniej 10 walut, znaleziono: {count}"
+    assert actual_count == len(expected), (
+        f"Liczba opcji walut ({actual_count}) nie zgadza się z oczekiwaną ({len(expected)})."
+    )
 
-    labels = [currency_options.nth(i).inner_text() for i in range(count)]
+    labels = [actual_options.nth(i).inner_text() for i in range(actual_count)]
     print("Waluty na liście:", labels)
 
-    browser.close()
 
-
-def check_all_time_options_present(playwright, browser_name):
-    browser, context, page = setup_browser(playwright, browser_name)
+def check_all_time_options_present(browser):
+    page = browser.new_page()
     page.goto("http://localhost:1111/")
-    page.wait_for_selector("#time")
+    expected = get_time_options(page)
+    actual_options = page.locator("#time option")
+    actual_count = actual_options.count()
 
-    time_options = page.locator("#time option")
-    count = time_options.count()
-    assert count >= 8, f"Oczekiwano co najmniej 8 zakresów czasu, znaleziono: {count}"
+    assert actual_count == len(expected), (
+        f"Liczba opcji czasu ({actual_count}) nie zgadza się z oczekiwaną ({len(expected)})."
+    )
 
-    labels = [time_options.nth(i).inner_text() for i in range(count)]
+    labels = [actual_options.nth(i).inner_text() for i in range(actual_count)]
     print("Zakresy czasu na liście:", labels)
-
     browser.close()

@@ -29,6 +29,9 @@ git clone https://github.com/szerszen296/projekt.git
   - Przyciski pobierania działają poprawnie
   - Lista zmiany czasu działa poprawnie
   - Lista zmiany waluty działa poprawnie
+  - Lista zmiany waluty działa poprawnie po zmianie czasu
+  - Lista zmiany czasu działa poprawnie po zmianie waluty
+  - Wszystkie potrzebne opcje wyboru znajdują się na listach czasu i waluty
 * By uruchomić test serwera bedąc w głównym katalogu serwera należy wpisać komendy:
   - cd test
   - pytest test.py
