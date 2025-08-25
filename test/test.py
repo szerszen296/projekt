@@ -32,15 +32,12 @@ def test_switch_page_dynamic(page, dynamic_currency_codes, extra):
 def test_switch_currency(page, browser_name, extra):
     switch_currency(page, browser_name, extra)
 
-def test_switch_currency_and_time(page, browser_name, dynamic_currency_codes, dynamic_week_values, extra):
-    for currency in dynamic_currency_codes:
-        for week_value in dynamic_week_values:
-            switch_currency_and_time(page, browser_name, currency, week_value, extra)
+def test_switch_currency_and_time(page, browser_name, currency, week, extra):
+    switch_currency_and_time(page, browser_name, currency, week, extra)
 
-def test_switch_time(page, browser_name, dynamic_currency_codes, dynamic_week_values, extra):
+def test_switch_time(page, browser_name, dynamic_currency_codes, week, extra):
     for currency in dynamic_currency_codes:
-        for week_value in dynamic_week_values:
-            switch_time(page, browser_name, currency, week_value, extra)
+        switch_time(page, browser_name, currency, week, extra)
 
 def test_download_chart_for_week(page, browser_name, currency, week, extra):
     download_chart_for_currency_and_week(page, currency, week, browser_name, extra)

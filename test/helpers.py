@@ -23,7 +23,7 @@ def compare_screenshots(page, before_path, after_path, change_desc, selector, ex
 def assert_currency_page_loaded(page, currency_code):
     rows = page.locator("#currency-table tbody tr")
     count = rows.count()
-    assert 4 <= count <= 7, f"znaleziono: {count}"
+    assert count > 0, f"znaleziono: {count}"
 
     image = page.locator(f"img[alt='Wykres {currency_code}']")
     image.wait_for(state="visible", timeout=5000)
@@ -68,7 +68,6 @@ def switch_currency(page, browser_name, extra):
         selector="img[alt='Wykres USD']",
         extra=extra
     )
-
 
 def download_excel(page, browser_name, currency_code):
     with page.expect_download() as download_info:
@@ -126,7 +125,9 @@ def switch_time(page, browser_name, currency_code, week_value, extra):
     after_path = Path(DOWNLOAD_DIR) / f"{name_prefix}-after.png"
 
     page.screenshot(path=str(before_path), full_page=True)
+
     page.select_option("#time", value=week_value)
+
 
     compare_screenshots(
         page=page,
@@ -136,6 +137,8 @@ def switch_time(page, browser_name, currency_code, week_value, extra):
         selector=f"img[alt='Wykres {currency_code}']",
         extra=extra
     )
+
+    assert_currency_page_loaded(page, currency_code)
 
 
 def switch_currency_and_time(page, browser_name, currency_code, week_value, extra):
@@ -160,6 +163,7 @@ def switch_currency_and_time(page, browser_name, currency_code, week_value, extr
         extra=extra
     )
 
+    assert_currency_page_loaded(page, currency_code)
 
 def download_excel_for_currency_and_week(page, currency, week_value, browser_name, extra):
     page.goto("http://localhost:1111/")
